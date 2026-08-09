@@ -83,6 +83,7 @@ model AuthToken {
 
 
 
+
 model Profile {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   userId    String   @db.ObjectId
