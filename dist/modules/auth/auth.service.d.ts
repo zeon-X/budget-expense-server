@@ -16,39 +16,40 @@ export declare class AuthService {
     private readonly sessionService;
     private readonly tokenService;
     constructor(database: DatabaseService, emailService: EmailService, sessionService: SessionService, tokenService: TokenService);
+    private createSessionTokens;
     register(dto: RegisterDto): Promise<{
         message: string;
         user: {
             id: string;
             email: string;
-            emailVerified: any;
+            emailVerified: boolean;
         };
-        accessToken: any;
-        refreshToken: any;
+        accessToken: string;
+        refreshToken: string;
     }>;
     login(dto: LoginDto): Promise<{
         message: string;
         user: {
             id: string;
             email: string;
-            emailVerified: any;
+            emailVerified: boolean;
         };
-        accessToken: any;
-        refreshToken: any;
+        accessToken: string;
+        refreshToken: string;
     }>;
     googleLogin(dto: GoogleLoginDto): Promise<{
         message: string;
         user: {
             id: string;
             email: string;
-            emailVerified: any;
+            emailVerified: boolean;
         };
-        accessToken: any;
-        refreshToken: any;
+        accessToken: string;
+        refreshToken: string;
     }>;
     refreshToken(dto: RefreshTokenDto): Promise<{
-        accessToken: any;
-        refreshToken: any;
+        accessToken: string;
+        refreshToken: string;
     }>;
     logout(user: any): Promise<{
         message: string;
@@ -70,12 +71,12 @@ export declare class AuthService {
         user: {
             id: string;
             email: string;
-            emailVerified: any;
+            emailVerified: boolean;
         };
     }>;
     getMe(user: any): Promise<{
         id: string;
         email: string;
-        emailVerified: any;
+        emailVerified: boolean;
     }>;
 }

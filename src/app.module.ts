@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 
 import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
     imports: [
@@ -27,12 +28,19 @@ import { HealthModule } from './health/health.module';
                     );
                 }
 
+                if (!environment.JWT_ACCESS_SECRET?.trim()) {
+                    throw new Error(
+                        'JWT_ACCESS_SECRET is required. Set it to a cryptographically random value.',
+                    );
+                }
+
                 return environment;
             },
         }),
 
         DatabaseModule,
-        HealthModule
+        HealthModule,
+        AuthModule,
     ],
 })
 export class AppModule { }

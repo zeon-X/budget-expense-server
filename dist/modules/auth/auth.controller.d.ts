@@ -15,34 +15,34 @@ export declare class AuthController {
         user: {
             id: string;
             email: string;
-            emailVerified: any;
+            emailVerified: boolean;
         };
-        accessToken: any;
-        refreshToken: any;
+        accessToken: string;
+        refreshToken: string;
     }>;
     login(dto: LoginDto): Promise<{
         message: string;
         user: {
             id: string;
             email: string;
-            emailVerified: any;
+            emailVerified: boolean;
         };
-        accessToken: any;
-        refreshToken: any;
+        accessToken: string;
+        refreshToken: string;
     }>;
     googleLogin(dto: GoogleLoginDto): Promise<{
         message: string;
         user: {
             id: string;
             email: string;
-            emailVerified: any;
+            emailVerified: boolean;
         };
-        accessToken: any;
-        refreshToken: any;
+        accessToken: string;
+        refreshToken: string;
     }>;
     refresh(dto: RefreshTokenDto): Promise<{
-        accessToken: any;
-        refreshToken: any;
+        accessToken: string;
+        refreshToken: string;
     }>;
     logout(req: any): Promise<{
         message: string;
@@ -64,12 +64,12 @@ export declare class AuthController {
         user: {
             id: string;
             email: string;
-            emailVerified: any;
+            emailVerified: boolean;
         };
     }>;
     getMe(req: any): Promise<{
         id: string;
         email: string;
-        emailVerified: any;
+        emailVerified: boolean;
     }>;
 }

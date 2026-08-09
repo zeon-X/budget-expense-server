@@ -61,6 +61,20 @@ let AuthService = class AuthService {
         this.sessionService = sessionService;
         this.tokenService = tokenService;
     }
+    async createSessionTokens(userId, email, provider) {
+        const refreshToken = this.tokenService.generateToken();
+        const session = await this.sessionService.createSession({
+            userId,
+            refreshToken,
+            provider,
+        });
+        const accessToken = await this.tokenService.generateAccessToken({
+            sub: userId,
+            email,
+            sessionId: session.id,
+        });
+        return { accessToken, refreshToken };
+    }
     async register(dto) {
         const existingUser = await this.database.user.findUnique({
             where: {
@@ -75,25 +89,20 @@ let AuthService = class AuthService {
             data: {
                 email: dto.email.toLowerCase(),
                 passwordHash,
-                emailVerified: false,
             },
         });
-        const tokens = await this.tokenService.generateTokens({
-            userId: user.id,
+        const tokens = await this.createSessionTokens(user.id, user.email, client_1.AuthProvider.EMAIL);
+        const verification = await this.tokenService.createAuthToken(user.id, client_1.AuthTokenType.EMAIL_VERIFICATION, 24 * 60);
+        await this.emailService.sendVerificationEmail({
             email: user.email,
+            ...verification,
         });
-        await this.sessionService.createSession({
-            userId: user.id,
-            refreshToken: tokens.refreshToken,
-            provider: client_1.AuthProvider.EMAIL,
-        });
-        await this.emailService.sendVerificationEmail(user);
         return {
             message: "Registration successful",
             user: {
                 id: user.id,
                 email: user.email,
-                emailVerified: user.emailVerified,
+                emailVerified: Boolean(user.emailVerifiedAt),
             },
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken,
@@ -112,21 +121,13 @@ let AuthService = class AuthService {
         if (!passwordValid) {
             throw new common_1.UnauthorizedException("Invalid email or password");
         }
-        const tokens = await this.tokenService.generateTokens({
-            userId: user.id,
-            email: user.email,
-        });
-        await this.sessionService.createSession({
-            userId: user.id,
-            refreshToken: tokens.refreshToken,
-            provider: client_1.AuthProvider.EMAIL,
-        });
+        const tokens = await this.createSessionTokens(user.id, user.email, client_1.AuthProvider.EMAIL);
         return {
             message: "Login successful",
             user: {
                 id: user.id,
                 email: user.email,
-                emailVerified: user.emailVerified,
+                emailVerified: Boolean(user.emailVerifiedAt),
             },
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken,
@@ -146,25 +147,17 @@ let AuthService = class AuthService {
             user = await this.database.user.create({
                 data: {
                     email: googleUser.email.toLowerCase(),
-                    emailVerified: true,
+                    emailVerifiedAt: new Date(),
                 },
             });
         }
-        const tokens = await this.tokenService.generateTokens({
-            userId: user.id,
-            email: user.email,
-        });
-        await this.sessionService.createSession({
-            userId: user.id,
-            refreshToken: tokens.refreshToken,
-            provider: client_1.AuthProvider.GOOGLE,
-        });
+        const tokens = await this.createSessionTokens(user.id, user.email, client_1.AuthProvider.GOOGLE);
         return {
             message: "Google login successful",
             user: {
                 id: user.id,
                 email: user.email,
-                emailVerified: user.emailVerified,
+                emailVerified: Boolean(user.emailVerifiedAt),
             },
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken,
@@ -175,14 +168,16 @@ let AuthService = class AuthService {
         if (!session) {
             throw new common_1.UnauthorizedException("Invalid or expired refresh token");
         }
-        const tokens = await this.tokenService.generateTokens({
-            userId: session.userId,
+        const refreshToken = this.tokenService.generateToken();
+        const accessToken = await this.tokenService.generateAccessToken({
+            sub: session.userId,
             email: session.user.email,
+            sessionId: session.id,
         });
-        await this.sessionService.rotateRefreshToken(session.id, tokens.refreshToken);
+        await this.sessionService.rotateRefreshToken(session.id, refreshToken);
         return {
-            accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
+            accessToken,
+            refreshToken,
         };
     }
     async logout(user) {
@@ -208,7 +203,8 @@ let AuthService = class AuthService {
                 message: "If an account exists with this email, a password reset link has been sent.",
             };
         }
-        await this.emailService.sendPasswordResetEmail(user);
+        const reset = await this.tokenService.createAuthToken(user.id, client_1.AuthTokenType.PASSWORD_RESET, 60);
+        await this.emailService.sendPasswordResetEmail({ email: user.email, ...reset });
         return {
             message: "If an account exists with this email, a password reset link has been sent.",
         };
@@ -241,7 +237,7 @@ let AuthService = class AuthService {
         if (!currentUser) {
             throw new common_1.UnauthorizedException("User not found");
         }
-        if (currentUser.emailVerified) {
+        if (currentUser.emailVerifiedAt) {
             return {
                 message: "Email is already verified",
             };
@@ -249,7 +245,11 @@ let AuthService = class AuthService {
         if (currentUser.email.toLowerCase() !== dto.email.toLowerCase()) {
             throw new common_1.BadRequestException("Email does not match the authenticated account");
         }
-        await this.emailService.sendVerificationEmail(currentUser);
+        const verification = await this.tokenService.createAuthToken(currentUser.id, client_1.AuthTokenType.EMAIL_VERIFICATION, 24 * 60);
+        await this.emailService.sendVerificationEmail({
+            email: currentUser.email,
+            ...verification,
+        });
         return {
             message: "Verification link sent",
         };
@@ -264,7 +264,7 @@ let AuthService = class AuthService {
                 id: verificationData.userId,
             },
             data: {
-                emailVerified: true,
+                emailVerifiedAt: new Date(),
             },
         });
         return {
@@ -272,7 +272,7 @@ let AuthService = class AuthService {
             user: {
                 id: user.id,
                 email: user.email,
-                emailVerified: user.emailVerified,
+                emailVerified: Boolean(user.emailVerifiedAt),
             },
         };
     }
@@ -288,7 +288,7 @@ let AuthService = class AuthService {
         return {
             id: currentUser.id,
             email: currentUser.email,
-            emailVerified: currentUser.emailVerified,
+            emailVerified: Boolean(currentUser.emailVerifiedAt),
         };
     }
 };

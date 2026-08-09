@@ -14,14 +14,12 @@ const common_1 = require("@nestjs/common");
 const crypto_1 = require("crypto");
 const database_service_1 = require("../../../database/database.service");
 let SessionService = class SessionService {
-    databaseService;
-    constructor(databaseService) {
-        this.databaseService = databaseService;
+    database;
+    constructor(database) {
+        this.database = database;
     }
-    async createSession(userId, provider, metadata, expiresAt) {
-        const refreshToken = (0, crypto_1.randomBytes)(48).toString("hex");
-        const refreshTokenHash = this.hashToken(refreshToken);
-        const session = await this.databaseService.authSession.create({
+    async createSession({ userId, provider, refreshToken, metadata = {}, expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), }) {
+        return this.database.authSession.create({
             data: {
                 userId,
                 provider,
@@ -30,32 +28,58 @@ let SessionService = class SessionService {
                 deviceType: metadata.deviceType,
                 ipAddress: metadata.ipAddress,
                 userAgent: metadata.userAgent,
-                refreshTokenHash,
+                refreshTokenHash: this.hashToken(refreshToken),
                 expiresAt,
                 lastUsedAt: new Date(),
             },
         });
-        return { session, refreshToken };
     }
-    async findSession(sessionId) {
-        return this.databaseService.authSession.findUnique({
+    async validateRefreshToken(refreshToken) {
+        const session = await this.database.authSession.findFirst({
+            where: {
+                refreshTokenHash: this.hashToken(refreshToken),
+                revokedAt: null,
+                expiresAt: { gt: new Date() },
+            },
+            include: { user: true },
+        });
+        if (session) {
+            await this.updateLastUsed(session.id);
+        }
+        return session;
+    }
+    async rotateRefreshToken(sessionId, refreshToken) {
+        return this.database.authSession.update({
             where: { id: sessionId },
+            data: {
+                refreshTokenHash: this.hashToken(refreshToken),
+                lastUsedAt: new Date(),
+            },
         });
     }
-    async revokeSession(sessionId) {
-        return this.databaseService.authSession.update({
+    logout(sessionId) {
+        return this.revokeSession(sessionId);
+    }
+    logoutAll(userId) {
+        return this.revokeAllUserSessions(userId);
+    }
+    async findSession(sessionId) {
+        return this.database.authSession.findUnique({ where: { id: sessionId } });
+    }
+    revokeSession(sessionId) {
+        return this.database.authSession.update({
             where: { id: sessionId },
             data: { revokedAt: new Date() },
         });
     }
-    async revokeAllUserSessions(userId) {
-        return this.databaseService.authSession.updateMany({
+    revokeAllUserSessions(userId) {
+        return this.database.authSession.updateMany({
             where: { userId, revokedAt: null },
             data: { revokedAt: new Date() },
         });
     }
-    async updateLastUsed(sessionId) {
-        return this.databaseService.authSession.update({
+    updateLastUsed(sessionId) {
+        return this.database.authSession.update({
             where: { id: sessionId },
             data: { lastUsedAt: new Date() },
         });
