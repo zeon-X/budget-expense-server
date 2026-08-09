@@ -13,6 +13,7 @@ const node_path_1 = require("node:path");
 const database_module_1 = require("./database/database.module");
 const health_module_1 = require("./health/health.module");
 const auth_module_1 = require("./modules/auth/auth.module");
+const users_module_1 = require("./modules/users/users.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -21,17 +22,17 @@ exports.AppModule = AppModule = __decorate([
         imports: [
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
-                envFilePath: (0, node_path_1.resolve)(__dirname, '..', '.env'),
+                envFilePath: (0, node_path_1.resolve)(__dirname, "..", ".env"),
                 validate: (environment) => {
                     const databaseUrl = environment.DATABASE_URL?.trim();
                     if (!databaseUrl) {
-                        throw new Error('DATABASE_URL is required. Set it in the deployment environment or copy .env.example to .env and provide a MongoDB connection string.');
+                        throw new Error("DATABASE_URL is required. Set it in the deployment environment or copy .env.example to .env and provide a MongoDB connection string.");
                     }
                     if (!/^mongodb(\+srv)?:\/\//.test(databaseUrl)) {
-                        throw new Error('DATABASE_URL must be a valid MongoDB connection string starting with mongodb:// or mongodb+srv://.');
+                        throw new Error("DATABASE_URL must be a valid MongoDB connection string starting with mongodb:// or mongodb+srv://.");
                     }
                     if (!environment.JWT_ACCESS_SECRET?.trim()) {
-                        throw new Error('JWT_ACCESS_SECRET is required. Set it to a cryptographically random value.');
+                        throw new Error("JWT_ACCESS_SECRET is required. Set it to a cryptographically random value.");
                     }
                     return environment;
                 },
@@ -39,6 +40,7 @@ exports.AppModule = AppModule = __decorate([
             database_module_1.DatabaseModule,
             health_module_1.HealthModule,
             auth_module_1.AuthModule,
+            users_module_1.UsersModule,
         ],
     })
 ], AppModule);
