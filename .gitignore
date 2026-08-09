@@ -1,5 +1,57 @@
+# compiled output
 
-/src/generated/prisma
+/node_modules
+/build
+/out
+
+# environment variables
 .env
-node_modules
-dist
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-*
+
+# testing
+/coverage
+/.nyc_output
+
+# prisma (optional: if you store generated client or migrations)
+# Usually migrations are committed, but if you generate client in a folder not in node_modules, ignore it.
+# prisma/generated/  (if you generate client elsewhere)
+
+# temporary files
+.tmp/
+.temp/
+
+# docker
+docker-compose.override.yml
+
+# secrets
+*.pem
+*.key
+*.crt
+*.p12
+
+# misc
+.pnpm-debug.log
+*.tsbuildinfo

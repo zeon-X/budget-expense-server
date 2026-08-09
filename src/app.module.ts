@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 
 import { DatabaseModule } from "./database/database.module";
 import { HealthModule } from "./health/health.module";
+import { AccountsModule } from "./modules/accounts/accounts.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { ProfilesModule } from "./modules/profiles/profiles.module";
 import { UsersModule } from "./modules/users/users.module";
@@ -45,6 +46,7 @@ import { UsersModule } from "./modules/users/users.module";
     AuthModule,
     UsersModule,
     ProfilesModule,
+    AccountsModule,
   ],
 })
 export class AppModule {}
