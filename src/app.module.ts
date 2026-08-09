@@ -6,6 +6,7 @@ import { DatabaseModule } from "./database/database.module";
 import { HealthModule } from "./health/health.module";
 import { AccountsModule } from "./modules/accounts/accounts.module";
 import { AuthModule } from "./modules/auth/auth.module";
+import { CategoriesModule } from "./modules/categories/categories.module";
 import { ProfilesModule } from "./modules/profiles/profiles.module";
 import { UsersModule } from "./modules/users/users.module";
 
@@ -47,6 +48,7 @@ import { UsersModule } from "./modules/users/users.module";
     UsersModule,
     ProfilesModule,
     AccountsModule,
+    CategoriesModule,
   ],
 })
 export class AppModule {}
