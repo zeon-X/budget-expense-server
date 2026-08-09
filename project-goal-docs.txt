@@ -1,0 +1,58 @@
+                    ┌──────────────┐
+                    │     User     │
+                    └──────┬───────┘
+                           │
+                    Authentication
+                           │
+                           ▼
+                    ┌──────────────┐
+                    │   Profiles   │
+                    └──────┬───────┘
+                           │
+          ┌────────────────┼────────────────┐
+          │                │                │
+          ▼                ▼                ▼
+      Accounts        Categories       Transactions
+                                           │
+                           ┌───────────────┼───────────────┐
+                           │               │               │
+                           ▼               ▼               ▼
+                       Income          Expenses          Debts
+                           │               │               │
+                           └───────────────┼───────────────┘
+                                           │
+                              ┌────────────┴────────────┐
+                              ▼                         ▼
+                           Budgets                   Reports
+                              │                         │
+                              └────────────┬────────────┘
+                                           ▼
+                                      Dashboard
+
+
+
+
+
+
+
+
+
+Request
+   │
+   ▼
+JWT Authentication
+   │
+   ▼
+Identify User
+   │
+   ▼
+Identify Profile
+   │
+   ▼
+Verify Profile belongs to User
+   │
+   ▼
+Perform operation
+   │
+   ▼
+Database

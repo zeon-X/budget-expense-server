@@ -1,0 +1,8 @@
+Debt behavior
+
+For:
+
+Lend ৳5,000
+Borrow ৳5,000
+Repay ৳2,000
+Receive repayment ৳2,000

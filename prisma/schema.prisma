@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+}
+
+enum AuthTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model User {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  email           String         @unique
+  passwordHash    String?
+  emailVerifiedAt DateTime?
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  authSessions    AuthSession[]
+  authTokens      AuthToken[]
+}
+
+model AuthSession {
+  id               String       @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId           String       @db.ObjectId
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider         AuthProvider
+
+  deviceId         String?
+  deviceName       String?
+  deviceType       String?
+  ipAddress        String?
+  userAgent        String?
+
+  refreshTokenHash String
+
+  expiresAt        DateTime
+  lastUsedAt       DateTime?
+  revokedAt        DateTime?
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([refreshTokenHash])
+}
+
+model AuthToken {
+  id         String        @id @default(auto()) @map("_id") @db.ObjectId
+
+  userId     String        @db.ObjectId
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type       AuthTokenType
+
+  tokenHash  String
+
+  expiresAt  DateTime
+  usedAt     DateTime?
+
+  createdAt  DateTime      @default(now())
+
+  @@index([userId])
+  @@index([tokenHash])
+}

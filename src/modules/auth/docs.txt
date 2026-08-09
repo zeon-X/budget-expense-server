@@ -1,0 +1,32 @@
+AUTHENTICATION
+────────────────────────────────
+
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/google
+POST /api/auth/refresh
+POST /api/auth/logout
+POST /api/auth/logout-all
+
+
+EMAIL VERIFICATION
+────────────────────────────────
+
+POST /api/auth/verification/request
+POST /api/auth/verification/verify
+
+
+PASSWORD
+────────────────────────────────
+
+POST /api/auth/password/forgot
+POST /api/auth/password/reset
+POST /api/auth/password/set
+
+
+SESSIONS
+────────────────────────────────
+
+GET  /api/auth/sessions
+DELETE /api/auth/sessions/:sessionId
+DELETE /api/auth/sessions
