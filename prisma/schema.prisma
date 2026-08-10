@@ -28,6 +28,7 @@ model User {
 
   authSessions    AuthSession[]
   authTokens      AuthToken[]
+  profiles Profile[]
 }
 
 model AuthSession {
@@ -75,3 +76,106 @@ model AuthToken {
   @@index([userId])
   @@index([tokenHash])
 }
+
+
+
+
+
+
+
+
+model Profile {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+
+  name      String
+  isDefault Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+  accounts Account[]
+  profileCategories ProfileCategory[]
+
+  @@index([userId])
+}
+
+
+
+
+
+
+
+model Account {
+  id                       String      @id @default(auto()) @map("_id") @db.ObjectId
+  profileId                String      @db.ObjectId
+
+  name                     String
+  type                     AccountType
+  currency                 String      @default("BDT")
+
+  currentBalance           Int         @default(0)
+  lastBalanceTransactionId String?     @db.ObjectId
+  balanceUpdatedAt         DateTime?
+
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
+
+  profile                  Profile     @relation(fields: [profileId], references: [id])
+
+  @@index([profileId])
+}
+
+enum AccountType {
+  CASH
+  BANK
+  MOBILE_WALLET
+  CARD
+  SAVINGS
+  OTHER
+}
+
+
+
+
+
+
+
+
+
+
+model Category {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  slug      String  @unique
+  icon      String
+  parentId  String? @db.ObjectId
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+
+  parent   Category?  @relation("CategoryChildren", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children Category[] @relation("CategoryChildren")
+
+  profileCategories ProfileCategory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProfileCategory {
+  id         String  @id @default(auto()) @map("_id") @db.ObjectId
+  profileId  String  @db.ObjectId
+  categoryId String  @db.ObjectId
+  enabled    Boolean @default(true)
+
+  profile  Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([profileId, categoryId])
+  @@index([profileId])
+  @@index([categoryId])
+}
+

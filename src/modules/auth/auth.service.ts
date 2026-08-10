@@ -4,7 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
-import { AuthProvider } from "@prisma/client";
+import { AuthProvider, AuthTokenType } from "@prisma/client";
 
 import * as bcrypt from "bcrypt";
 
@@ -32,6 +32,26 @@ export class AuthService {
     private readonly tokenService: TokenService,
   ) {}
 
+  private async createSessionTokens(
+    userId: string,
+    email: string,
+    provider: AuthProvider,
+  ) {
+    const refreshToken = this.tokenService.generateToken();
+    const session = await this.sessionService.createSession({
+      userId,
+      refreshToken,
+      provider,
+    });
+    const accessToken = await this.tokenService.generateAccessToken({
+      sub: userId,
+      email,
+      sessionId: session.id,
+    });
+
+    return { accessToken, refreshToken };
+  }
+
   // --------------------------------------------------
   // REGISTER
   // --------------------------------------------------
@@ -53,7 +73,6 @@ export class AuthService {
       data: {
         email: dto.email.toLowerCase(),
         passwordHash,
-        emailVerified: false,
       },
     });
 
@@ -63,16 +82,11 @@ export class AuthService {
      * The user does NOT need to login again
      * after registration.
      */
-    const tokens = await this.tokenService.generateTokens({
-      userId: user.id,
-      email: user.email,
-    });
-
-    await this.sessionService.createSession({
-      userId: user.id,
-      refreshToken: tokens.refreshToken,
-      provider: AuthProvider.EMAIL,
-    });
+    const tokens = await this.createSessionTokens(
+      user.id,
+      user.email,
+      AuthProvider.EMAIL,
+    );
 
     /*
      * Verification is optional.
@@ -81,7 +95,15 @@ export class AuthService {
      * can continue using the application without
      * verifying their email.
      */
-    await this.emailService.sendVerificationEmail(user);
+    const verification = await this.tokenService.createAuthToken(
+      user.id,
+      AuthTokenType.EMAIL_VERIFICATION,
+      24 * 60,
+    );
+    await this.emailService.sendVerificationEmail({
+      email: user.email,
+      ...verification,
+    });
 
     return {
       message: "Registration successful",
@@ -89,7 +111,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        emailVerified: user.emailVerified,
+        emailVerified: Boolean(user.emailVerifiedAt),
       },
 
       accessToken: tokens.accessToken,
@@ -118,16 +140,11 @@ export class AuthService {
       throw new UnauthorizedException("Invalid email or password");
     }
 
-    const tokens = await this.tokenService.generateTokens({
-      userId: user.id,
-      email: user.email,
-    });
-
-    await this.sessionService.createSession({
-      userId: user.id,
-      refreshToken: tokens.refreshToken,
-      provider: AuthProvider.EMAIL,
-    });
+    const tokens = await this.createSessionTokens(
+      user.id,
+      user.email,
+      AuthProvider.EMAIL,
+    );
 
     return {
       message: "Login successful",
@@ -135,7 +152,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        emailVerified: user.emailVerified,
+        emailVerified: Boolean(user.emailVerifiedAt),
       },
 
       accessToken: tokens.accessToken,
@@ -172,21 +189,16 @@ export class AuthService {
       user = await this.database.user.create({
         data: {
           email: googleUser.email.toLowerCase(),
-          emailVerified: true,
+          emailVerifiedAt: new Date(),
         },
       });
     }
 
-    const tokens = await this.tokenService.generateTokens({
-      userId: user.id,
-      email: user.email,
-    });
-
-    await this.sessionService.createSession({
-      userId: user.id,
-      refreshToken: tokens.refreshToken,
-      provider: AuthProvider.GOOGLE,
-    });
+    const tokens = await this.createSessionTokens(
+      user.id,
+      user.email,
+      AuthProvider.GOOGLE,
+    );
 
     return {
       message: "Google login successful",
@@ -194,7 +206,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        emailVerified: user.emailVerified,
+        emailVerified: Boolean(user.emailVerifiedAt),
       },
 
       accessToken: tokens.accessToken,
@@ -215,19 +227,21 @@ export class AuthService {
       throw new UnauthorizedException("Invalid or expired refresh token");
     }
 
-    const tokens = await this.tokenService.generateTokens({
-      userId: session.userId,
+    const refreshToken = this.tokenService.generateToken();
+    const accessToken = await this.tokenService.generateAccessToken({
+      sub: session.userId,
       email: session.user.email,
+      sessionId: session.id,
     });
 
     await this.sessionService.rotateRefreshToken(
       session.id,
-      tokens.refreshToken,
+      refreshToken,
     );
 
     return {
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
+      accessToken,
+      refreshToken,
     };
   }
 
@@ -276,7 +290,12 @@ export class AuthService {
       };
     }
 
-    await this.emailService.sendPasswordResetEmail(user);
+    const reset = await this.tokenService.createAuthToken(
+      user.id,
+      AuthTokenType.PASSWORD_RESET,
+      60,
+    );
+    await this.emailService.sendPasswordResetEmail({ email: user.email, ...reset });
 
     return {
       message:
@@ -335,7 +354,7 @@ export class AuthService {
       throw new UnauthorizedException("User not found");
     }
 
-    if (currentUser.emailVerified) {
+    if (currentUser.emailVerifiedAt) {
       return {
         message: "Email is already verified",
       };
@@ -351,7 +370,15 @@ export class AuthService {
       );
     }
 
-    await this.emailService.sendVerificationEmail(currentUser);
+    const verification = await this.tokenService.createAuthToken(
+      currentUser.id,
+      AuthTokenType.EMAIL_VERIFICATION,
+      24 * 60,
+    );
+    await this.emailService.sendVerificationEmail({
+      email: currentUser.email,
+      ...verification,
+    });
 
     return {
       message: "Verification link sent",
@@ -377,7 +404,7 @@ export class AuthService {
       },
 
       data: {
-        emailVerified: true,
+        emailVerifiedAt: new Date(),
       },
     });
 
@@ -387,7 +414,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        emailVerified: user.emailVerified,
+        emailVerified: Boolean(user.emailVerifiedAt),
       },
     };
   }
@@ -410,7 +437,7 @@ export class AuthService {
     return {
       id: currentUser.id,
       email: currentUser.email,
-      emailVerified: currentUser.emailVerified,
+      emailVerified: Boolean(currentUser.emailVerifiedAt),
     };
   }
 }
