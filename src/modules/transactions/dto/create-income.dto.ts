@@ -5,10 +5,9 @@ import {
   IsString,
 } from "class-validator";
 
-export class UpdateTransactionDto {
-  @IsOptional()
+export class CreateIncomeDto {
   @IsNumberString()
-  amount?: string;
+  amount!: string;
 
   @IsOptional()
   @IsString()
@@ -26,7 +25,6 @@ export class UpdateTransactionDto {
   @IsString()
   photoUrl?: string;
 
-  @IsOptional()
   @IsDateString()
-  transactionDate?: string;
+  transactionDate!: string;
 }

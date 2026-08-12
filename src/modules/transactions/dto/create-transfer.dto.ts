@@ -5,18 +5,15 @@ import {
   IsString,
 } from "class-validator";
 
-export class UpdateTransactionDto {
-  @IsOptional()
+export class CreateTransferDto {
   @IsNumberString()
-  amount?: string;
+  amount!: string;
 
-  @IsOptional()
   @IsString()
-  accountId?: string;
+  sourceAccountId!: string;
 
-  @IsOptional()
   @IsString()
-  categoryId?: string;
+  destinationAccountId!: string;
 
   @IsOptional()
   @IsString()
@@ -26,7 +23,6 @@ export class UpdateTransactionDto {
   @IsString()
   photoUrl?: string;
 
-  @IsOptional()
   @IsDateString()
-  transactionDate?: string;
+  transactionDate!: string;
 }

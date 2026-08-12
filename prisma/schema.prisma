@@ -97,8 +97,10 @@ model Profile {
   user User @relation(fields: [userId], references: [id])
   accounts Account[]
   profileCategories ProfileCategory[]
+  transactions Transaction[]
 
   @@index([userId])
+  
 }
 
 
@@ -123,6 +125,7 @@ model Account {
   updatedAt                DateTime    @updatedAt
 
   profile                  Profile     @relation(fields: [profileId], references: [id])
+  transactions Transaction[]
 
   @@index([profileId])
 }
@@ -158,6 +161,7 @@ model Category {
   children Category[] @relation("CategoryChildren")
 
   profileCategories ProfileCategory[]
+  transactions Transaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -179,3 +183,57 @@ model ProfileCategory {
   @@index([categoryId])
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+model Transaction {
+  id        String          @id @default(auto()) @map("_id") @db.ObjectId
+
+  profileId String          @db.ObjectId
+  accountId String?         @db.ObjectId
+  categoryId String?        @db.ObjectId
+
+  type      TransactionType
+  amount    Int             @default(0)
+
+  note      String?
+  photoUrl  String?
+
+  transactionDate DateTime
+
+  profile  Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  account  Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  // Used only for TRANSFER
+  sourceAccountId      String? @db.ObjectId
+  destinationAccountId String? @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([accountId])
+  @@index([categoryId])
+  @@index([transactionDate])
+  @@index([profileId, transactionDate])
+  @@index([profileId, type])
+}
